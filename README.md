@@ -5,14 +5,17 @@ Automated crawler that verifies that https://astridwanja.com loads successfully,
 ## Project layout
 
 - `scripts/website_checker.py` – crawler script that performs all checks and writes JSON/Markdown reports. Internal pages are crawled recursively, while every HTTP(S) link—internal or external—is requested to ensure it succeeds; LinkedIn responses with HTTP 999 are treated as informational warnings (only surfaced when other link errors exist).
-- `requirements.txt` – Python dependencies for the crawler.
+- `requirements.txt` – Python dependencies for the crawler and ranking generator.
 - `.github/workflows/website-check.yml` – scheduled GitHub Actions workflow that runs the crawler and delivers notifications.
+- `ranking/build_rankings.py` – Playwright-powered scraper that captures ITF singles and doubles rankings along with yearly win/loss records and renders a GitHub Pages-ready summary in `docs/rankings/`.
 
 ## Makefile shortcuts
 
 ```bash
 make install            # Install Python dependencies using PYTHON=<path> (defaults to python3)
+make install-browsers   # Install Playwright Chromium binary inside the virtualenv
 make check              # Run the website checker (override BASE_URL/INTERNAL_DOMAINS/JSON_REPORT/MARKDOWN_REPORT as needed)
+make rankings           # Generate docs/rankings/ from the ITF player profile
 make clean              # Remove generated reports and __pycache__ folders
 ```
 
@@ -41,6 +44,24 @@ make check
 ```
 
 The `install` target automatically creates (or recreates) `.venv/` if it is missing—falling back to `virtualenv` if the built-in `venv` module is unavailable—while `make clean` removes the reports, cached bytecode, and the virtual environment so the repository stays tidy.
+
+## Generating the ranking snapshot
+
+1. Install dependencies and the Chromium browser once:
+	```bash
+	make install
+	make install-browsers
+	```
+2. Build the GitHub Pages output:
+	```bash
+	make rankings
+	```
+
+The script writes updated HTML and JSON artefacts to `docs/rankings/`. GitHub Pages (when configured to serve the `docs/` directory) will automatically publish the refreshed ranking snapshot on the next push.
+
+### Automated publishing
+
+The GitHub Actions workflow `.github/workflows/rankings-pages.yml` regenerates the rankings snapshot every day at 04:00 UTC (or on demand via **Run workflow**) and deploys the contents of `docs/` to GitHub Pages using the built-in Pages deployment actions.
 
 ## GitHub Actions workflow
 

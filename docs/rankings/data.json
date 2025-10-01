@@ -1,0 +1,412 @@
+{
+  "player": {
+    "id": "800375000",
+    "name": "Astrid Wanja Brune Olsen"
+  },
+  "generated_at": "2025-10-01T20:49:55.709336+00:00",
+  "match_types": {
+    "S": {
+      "label": "Singles",
+      "overview": {
+        "rankings": [
+          {
+            "name": "WTA Singles Ranking",
+            "rank": 752,
+            "date": "22 September 2025"
+          },
+          {
+            "name": "ITF Singles Ranking",
+            "rank": 21,
+            "date": "29 September 2025"
+          }
+        ],
+        "careerHighRankings": [
+          {
+            "name": "WTA Singles Ranking",
+            "rank": 752,
+            "date": "22 September 2025"
+          },
+          {
+            "name": "ITF Singles Ranking",
+            "rank": 1,
+            "date": "30 June 2025"
+          }
+        ],
+        "years": [
+          2025,
+          2024,
+          2022,
+          2021,
+          2020,
+          2019,
+          2018,
+          2017,
+          2016,
+          2015,
+          2014
+        ],
+        "title": "Professional win-loss record"
+      },
+      "year_end_rankings": {
+        "tableTitle": null,
+        "columnNames": [
+          "Year",
+          "Singles ranking"
+        ],
+        "yearRankings": [
+          {
+            "year": 2024,
+            "rankings": [
+              1030
+            ]
+          },
+          {
+            "year": 2021,
+            "rankings": [
+              1029
+            ]
+          },
+          {
+            "year": 2020,
+            "rankings": [
+              1092
+            ]
+          },
+          {
+            "year": 2019,
+            "rankings": [
+              1049
+            ]
+          },
+          {
+            "year": 2018,
+            "rankings": [
+              1067
+            ]
+          },
+          {
+            "year": 2017,
+            "rankings": [
+              1029
+            ]
+          },
+          {
+            "year": 2016,
+            "rankings": [
+              1112
+            ]
+          }
+        ]
+      },
+      "win_loss": [
+        {
+          "year": 2025,
+          "wins": 26,
+          "losses": 23,
+          "win_rate": 53,
+          "surfaces": [
+            "Clay: 19-19 (50%)",
+            "Hard: 7-4 (64%)"
+          ]
+        },
+        {
+          "year": 2024,
+          "wins": 24,
+          "losses": 12,
+          "win_rate": 67,
+          "surfaces": [
+            "Clay: 18-9 (67%)",
+            "Hard: 6-3 (67%)"
+          ]
+        },
+        {
+          "year": 2022,
+          "wins": 5,
+          "losses": 7,
+          "win_rate": 42,
+          "surfaces": [
+            "Clay: 3-4 (43%)",
+            "Hard: 2-3 (40%)"
+          ]
+        },
+        {
+          "year": 2021,
+          "wins": 11,
+          "losses": 4,
+          "win_rate": 73,
+          "surfaces": [
+            "Clay: 11-3 (79%)",
+            "Hard: 0-1 (0%)"
+          ]
+        },
+        {
+          "year": 2020,
+          "wins": 0,
+          "losses": 1,
+          "win_rate": 0,
+          "surfaces": [
+            "Hard: 0-1 (0%)"
+          ]
+        },
+        {
+          "year": 2019,
+          "wins": 16,
+          "losses": 10,
+          "win_rate": 62,
+          "surfaces": [
+            "Clay: 16-10 (62%)"
+          ]
+        },
+        {
+          "year": 2018,
+          "wins": 15,
+          "losses": 20,
+          "win_rate": 43,
+          "surfaces": [
+            "Clay: 9-9 (50%)",
+            "Hard: 6-11 (35%)"
+          ]
+        },
+        {
+          "year": 2017,
+          "wins": 11,
+          "losses": 5,
+          "win_rate": 69,
+          "surfaces": [
+            "Clay: 10-5 (67%)",
+            "Hard: 1-0 (100%)"
+          ]
+        },
+        {
+          "year": 2016,
+          "wins": 14,
+          "losses": 6,
+          "win_rate": 70,
+          "surfaces": [
+            "Clay: 10-4 (71%)",
+            "Hard: 4-2 (67%)"
+          ]
+        },
+        {
+          "year": 2015,
+          "wins": 1,
+          "losses": 3,
+          "win_rate": 25,
+          "surfaces": [
+            "Clay: 0-1 (0%)",
+            "Hard: 1-2 (33%)"
+          ]
+        },
+        {
+          "year": 2014,
+          "wins": 1,
+          "losses": 3,
+          "win_rate": 25,
+          "surfaces": [
+            "Clay: 0-1 (0%)",
+            "Hard: 1-2 (33%)"
+          ]
+        }
+      ],
+      "win_loss_errors": []
+    },
+    "D": {
+      "label": "Doubles",
+      "overview": {
+        "rankings": [
+          {
+            "name": "WTA Doubles Ranking",
+            "rank": 409,
+            "date": "22 September 2025"
+          }
+        ],
+        "careerHighRankings": [
+          {
+            "name": "WTA Doubles Ranking",
+            "rank": 409,
+            "date": "22 September 2025"
+          }
+        ],
+        "years": [
+          2025,
+          2024,
+          2022,
+          2021,
+          2020,
+          2019,
+          2018,
+          2017,
+          2016,
+          2015,
+          2014
+        ],
+        "title": "Professional win-loss record"
+      },
+      "year_end_rankings": {
+        "tableTitle": null,
+        "columnNames": [
+          "Year",
+          "Doubles ranking"
+        ],
+        "yearRankings": [
+          {
+            "year": 2024,
+            "rankings": [
+              1487
+            ]
+          },
+          {
+            "year": 2022,
+            "rankings": [
+              1396
+            ]
+          },
+          {
+            "year": 2021,
+            "rankings": [
+              799
+            ]
+          },
+          {
+            "year": 2020,
+            "rankings": [
+              660
+            ]
+          },
+          {
+            "year": 2019,
+            "rankings": [
+              747
+            ]
+          },
+          {
+            "year": 2018,
+            "rankings": [
+              723
+            ]
+          },
+          {
+            "year": 2017,
+            "rankings": [
+              1011
+            ]
+          },
+          {
+            "year": 2016,
+            "rankings": [
+              889
+            ]
+          }
+        ]
+      },
+      "win_loss": [
+        {
+          "year": 2025,
+          "wins": 28,
+          "losses": 21,
+          "win_rate": 57,
+          "surfaces": [
+            "Clay: 23-16 (59%)",
+            "Hard: 5-5 (50%)"
+          ]
+        },
+        {
+          "year": 2024,
+          "wins": 6,
+          "losses": 8,
+          "win_rate": 43,
+          "surfaces": [
+            "Clay: 5-6 (45%)",
+            "Hard: 1-2 (33%)"
+          ]
+        },
+        {
+          "year": 2022,
+          "wins": 2,
+          "losses": 6,
+          "win_rate": 25,
+          "surfaces": [
+            "Clay: 2-3 (40%)",
+            "Hard: 0-3 (0%)"
+          ]
+        },
+        {
+          "year": 2021,
+          "wins": 2,
+          "losses": 2,
+          "win_rate": 50,
+          "surfaces": [
+            "Clay: 2-2 (50%)"
+          ]
+        },
+        {
+          "year": 2020,
+          "wins": 3,
+          "losses": 1,
+          "win_rate": 75,
+          "surfaces": [
+            "Hard: 3-1 (75%)"
+          ]
+        },
+        {
+          "year": 2019,
+          "wins": 12,
+          "losses": 8,
+          "win_rate": 60,
+          "surfaces": [
+            "Clay: 12-8 (60%)"
+          ]
+        },
+        {
+          "year": 2018,
+          "wins": 19,
+          "losses": 15,
+          "win_rate": 56,
+          "surfaces": [
+            "Clay: 11-7 (61%)",
+            "Hard: 8-8 (50%)"
+          ]
+        },
+        {
+          "year": 2017,
+          "wins": 5,
+          "losses": 4,
+          "win_rate": 56,
+          "surfaces": [
+            "Clay: 4-3 (57%)",
+            "Hard: 1-1 (50%)"
+          ]
+        },
+        {
+          "year": 2016,
+          "wins": 7,
+          "losses": 4,
+          "win_rate": 64,
+          "surfaces": [
+            "Clay: 6-3 (67%)",
+            "Hard: 1-1 (50%)"
+          ]
+        },
+        {
+          "year": 2015,
+          "wins": 3,
+          "losses": 2,
+          "win_rate": 60,
+          "surfaces": [
+            "Hard: 3-2 (60%)"
+          ]
+        },
+        {
+          "year": 2014,
+          "wins": 1,
+          "losses": 2,
+          "win_rate": 33,
+          "surfaces": [
+            "Hard: 1-2 (33%)"
+          ]
+        }
+      ],
+      "win_loss_errors": []
+    }
+  }
+}

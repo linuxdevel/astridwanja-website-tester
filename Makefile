@@ -8,7 +8,7 @@ JSON_REPORT ?= website-check-report.json
 MARKDOWN_REPORT ?= website-check-report.md
 SUMMARY_FILE ?= website-check-summary.txt
 
-.PHONY: install check clean
+.PHONY: install check clean rankings install-browsers
 
 $(VENV_PYTHON):
 	@if ! $(PYTHON) -m venv $(VENV); then \
@@ -22,6 +22,9 @@ $(VENV_PYTHON):
 install: $(VENV_PYTHON)
 	$(VENV_PYTHON) -m pip install -r requirements.txt
 
+install-browsers: install
+	$(VENV_PYTHON) -m playwright install chromium
+
 check: install
 	BASE_URL=$(BASE_URL) INTERNAL_DOMAINS=$(INTERNAL_DOMAINS) $(VENV_PYTHON) scripts/website_checker.py --json-output $(JSON_REPORT) --markdown-output $(MARKDOWN_REPORT)
 
@@ -29,3 +32,6 @@ clean:
 	rm -f $(JSON_REPORT) $(MARKDOWN_REPORT) $(SUMMARY_FILE)
 	find . -type d -name "__pycache__" -prune -exec rm -rf {} +
 	rm -rf $(VENV)
+
+rankings: install
+	$(VENV_PYTHON) ranking/build_rankings.py
