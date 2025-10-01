@@ -1,0 +1,8 @@
+# Python cache and virtualenv
+__pycache__/
+.venv/
+
+# Local run artifacts from the website checker
+website-check-report.json
+website-check-report.md
+website-check-summary.txt

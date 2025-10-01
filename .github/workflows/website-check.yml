@@ -1,0 +1,156 @@
+name: Website checker
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      BASE_URL: https://astridwanja.com
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run website checker
+        run: |
+          python scripts/website_checker.py \
+            --json-output website-check-report.json \
+            --markdown-output website-check-report.md
+
+      - name: Evaluate report
+        id: evaluate
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          data = json.loads(Path("website-check-report.json").read_text(encoding="utf-8"))
+          has_issues = bool(data.get("has_issues"))
+          issues = data.get("issues", [])
+          warnings = data.get("warnings", [])
+          issue_count = len(issues)
+          warning_count = len(warnings)
+          summary_lines = [
+              f"Base URL: {data.get('base_url')}",
+              f"Pages checked: {data.get('checked_pages')}",
+              f"Links checked: {data.get('checked_links')}",
+              f"Images checked: {data.get('checked_images')}",
+              f"Issues found: {issue_count}",
+          ]
+          if warning_count:
+              summary_lines.append(f"Warnings: {warning_count}")
+          summary = "\n".join(summary_lines)
+          Path("website-check-summary.txt").write_text(summary, encoding="utf-8")
+
+          print("----- Website checker summary -----")
+          for line in summary_lines:
+              print(line)
+
+          if issues:
+              print("\nIssues:")
+              for issue in issues:
+                  kind = issue.get("kind")
+                  message = issue.get("message")
+                  source = issue.get("source")
+                  target = issue.get("target")
+                  status = issue.get("status_code")
+                  parts = [f"[{kind}] {message}"]
+                  if source:
+                      parts.append(f"source={source}")
+                  if target:
+                      parts.append(f"target={target}")
+                  if status is not None:
+                      parts.append(f"status={status}")
+                  print(" - " + "; ".join(parts))
+
+          if warning_count:
+              print("\nWarnings:")
+              for warning in warnings:
+                  kind = warning.get("kind")
+                  message = warning.get("message")
+                  source = warning.get("source")
+                  target = warning.get("target")
+                  status = warning.get("status_code")
+                  parts = [f"[{kind}] {message}"]
+                  if source:
+                      parts.append(f"source={source}")
+                  if target:
+                      parts.append(f"target={target}")
+                  if status is not None:
+                      parts.append(f"status={status}")
+                  print(" - " + "; ".join(parts))
+
+          step_summary = os.environ.get("GITHUB_STEP_SUMMARY")
+          if step_summary:
+              with open(step_summary, "a", encoding="utf-8") as summary_file:
+                  summary_file.write("## Website checker results\n\n")
+                  summary_file.write(summary + "\n")
+                  if warning_count:
+                      summary_file.write("\n### Warnings\n")
+                      for warning in warnings:
+                          message = warning.get("message", "")
+                          target = warning.get("target")
+                          summary_file.write(f"- {message} (target: {target})\n")
+
+          output_path = os.environ["GITHUB_OUTPUT"]
+          with open(output_path, "a", encoding="utf-8") as fh:
+              fh.write(f"has_issues={'true' if has_issues else 'false'}\n")
+              fh.write("summary<<EOF\n")
+              fh.write(summary + "\n")
+              fh.write("EOF\n")
+              fh.write(f"warnings={warning_count}\n")
+
+          if has_issues:
+              print("::warning::Website checker detected issues. See attached report.")
+          else:
+              print("Website checker found no issues.")
+          PY
+
+      - name: Upload report artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: website-check-report
+          path: |
+            website-check-report.json
+            website-check-report.md
+            website-check-summary.txt
+
+      - name: Send failure notification email
+        if: steps.evaluate.outputs.has_issues == 'true'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER_ADDRESS }}
+          server_port: ${{ secrets.SMTP_SERVER_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: Website checker detected issues
+          to: ${{ secrets.NOTIFY_EMAIL_TO }}
+          from: ${{ secrets.NOTIFY_EMAIL_FROM }}
+          body: |
+            Website checker detected issues for https://astridwanja.com.
+
+            Summary:
+            ${{ steps.evaluate.outputs.summary }}
+
+            Detailed report is attached.
+          attachments: website-check-report.md
+
+      - name: Fail if issues detected
+        if: steps.evaluate.outputs.has_issues == 'true'
+        run: |
+          echo "Website checker detected issues. Failing job as requested."
+          exit 1
