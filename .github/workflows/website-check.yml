@@ -168,26 +168,6 @@ jobs:
         if: steps.upload_pages.outcome == 'success'
         run: echo "report_ready=true" >> "$GITHUB_OUTPUT"
 
-      - name: Send failure notification email
-        if: steps.evaluate.outputs.has_issues == 'true'
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: ${{ secrets.SMTP_SERVER_ADDRESS }}
-          server_port: ${{ secrets.SMTP_SERVER_PORT }}
-          username: ${{ secrets.SMTP_USERNAME }}
-          password: ${{ secrets.SMTP_PASSWORD }}
-          subject: Website checker detected issues
-          to: ${{ secrets.NOTIFY_EMAIL_TO }}
-          from: ${{ secrets.NOTIFY_EMAIL_FROM }}
-          body: |
-            Website checker detected issues for https://astridwanja.com.
-
-            Summary:
-            ${{ steps.evaluate.outputs.summary }}
-
-            Detailed report is attached.
-          attachments: website-check-report.md
-
   deploy:
     needs: check
     if: ${{ needs.check.outputs.report_ready == 'true' && github.ref == 'refs/heads/master' }}
