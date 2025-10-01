@@ -384,10 +384,10 @@ def render_page(match_data: Mapping[str, MatchTypeData]) -> str:
 <body>
   <main>
     <h1>{escape(PLAYER_NAME)} — ITF ranking snapshot</h1>
-    <p class=\"intro\">Automated snapshot of publicly available ITF ranking and performance data. Generated on {escape(generated)}.</p>
+    <p class=\"intro\">Snapshot of publicly available ITF ranking and performance data. Created on {escape(generated)}.</p>
     {sections_html}
     <footer>
-      Data sourced from the <a href=\"https://www.itftennis.com/\">International Tennis Federation</a> player profile. Script last updated {escape(generated)}.
+      Data collected from the <a href=\"https://www.itftennis.com/\">International Tennis Federation</a> player profile. Last updated {escape(generated)}.
     </footer>
   </main>
 </body>

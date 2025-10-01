@@ -5,11 +5,23 @@ on:
     - cron: "0 3 * * *"
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: website-check-pages
+  cancel-in-progress: false
+
 jobs:
   check:
     runs-on: ubuntu-latest
     env:
       BASE_URL: https://astridwanja.com
+    outputs:
+      has_issues: ${{ steps.evaluate.outputs.has_issues }}
+      report_ready: ${{ steps.mark_pages_ready.outputs.report_ready }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -25,13 +37,16 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run website checker
+        id: run_checker
         run: |
           python scripts/website_checker.py \
             --json-output website-check-report.json \
-            --markdown-output website-check-report.md
+            --markdown-output website-check-report.md \
+            --html-output website-check-report.html
 
       - name: Evaluate report
         id: evaluate
+        if: steps.run_checker.outcome == 'success'
         run: |
           python - <<'PY'
           import json
@@ -121,13 +136,37 @@ jobs:
           PY
 
       - name: Upload report artifacts
+        if: steps.run_checker.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: website-check-report
           path: |
             website-check-report.json
             website-check-report.md
+            website-check-report.html
             website-check-summary.txt
+
+      - name: Prepare Pages artifact
+        id: prepare_pages
+        if: steps.run_checker.outcome == 'success'
+        run: |
+          mkdir -p public/website-check
+          cp website-check-report.html public/website-check/index.html
+          cp website-check-report.json public/website-check/
+          cp website-check-report.md public/website-check/
+          cp website-check-summary.txt public/website-check/
+
+      - name: Upload Pages artifact
+        id: upload_pages
+        if: steps.prepare_pages.outcome == 'success'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - name: Mark Pages artifact ready
+        id: mark_pages_ready
+        if: steps.upload_pages.outcome == 'success'
+        run: echo "report_ready=true" >> "$GITHUB_OUTPUT"
 
       - name: Send failure notification email
         if: steps.evaluate.outputs.has_issues == 'true'
@@ -149,8 +188,25 @@ jobs:
             Detailed report is attached.
           attachments: website-check-report.md
 
-      - name: Fail if issues detected
-        if: steps.evaluate.outputs.has_issues == 'true'
+  deploy:
+    needs: check
+    if: ${{ needs.check.outputs.report_ready == 'true' && github.ref == 'refs/heads/master' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  enforce-status:
+    needs:
+      - check
+      - deploy
+    if: needs.check.outputs.has_issues == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail workflow when issues detected
         run: |
-          echo "Website checker detected issues. Failing job as requested."
+          echo "Website checker detected issues. Failing workflow as requested."
           exit 1

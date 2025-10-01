@@ -5,7 +5,8 @@ Usage:
         --base-url https://example.com \
     [--internal-domains example.com,www.example.com] \
         --json-output report.json \
-        --markdown-output report.md
+        --markdown-output report.md \
+        --html-output report.html
 
 The script crawls the provided base URL, collecting all internal pages. For every
 page it verifies that the page loads successfully, all HTTP(S) anchors resolve
@@ -22,10 +23,13 @@ from __future__ import annotations
 import argparse
 import collections
 import dataclasses
+import datetime as dt
 import json
 import os
 import sys
+import textwrap
 import time
+from html import escape
 from typing import Deque, Dict, Iterable, List, Optional, Set
 from urllib.parse import urljoin, urlparse, urlunparse
 
@@ -88,7 +92,7 @@ class CrawlSummary:
 
     def to_markdown(self) -> str:
         header = [
-            f"# Website check report",
+            "# Website check report",
             "",
             f"**Base URL:** {self.base_url}",
             f"**Duration:** {self.duration_seconds:.2f}s",
@@ -115,6 +119,7 @@ class CrawlSummary:
             if issue.status_code is not None:
                 lines.append(f"- **Status Code:** {issue.status_code}")
             sections.append("\n".join(lines))
+
         if self.has_warnings:
             sections.append("## Warnings")
             for idx, warning in enumerate(self.warnings, start=1):
@@ -129,7 +134,252 @@ class CrawlSummary:
                 if warning.status_code is not None:
                     lines.append(f"- **Status Code:** {warning.status_code}")
                 sections.append("\n".join(lines))
+
         return "\n".join(header + sections)
+
+    def to_html(self) -> str:
+        generated_at = (
+            dt.datetime.now(dt.timezone.utc)
+            .replace(microsecond=0)
+            .isoformat()
+            .replace("+00:00", "Z")
+        )
+
+        def render_stat_cards() -> str:
+            stats = [
+                ("Pages crawled", self.checked_pages),
+                ("Links checked", self.checked_links),
+                ("Images checked", self.checked_images),
+                ("Duration (s)", round(self.duration_seconds, 2)),
+            ]
+            cards: List[str] = []
+            for label, value in stats:
+                cards.append(
+                    textwrap.dedent(
+                        f"""
+                        <dl class="stat-card">
+                          <dt>{escape(str(label))}</dt>
+                          <dd>{escape(str(value))}</dd>
+                        </dl>
+                        """
+                    ).strip()
+                )
+            return "\n".join(cards)
+
+        def render_issue_list(title: str, items: List[Issue], empty_message: str) -> str:
+            heading = escape(title)
+            if not items:
+                return textwrap.dedent(
+                    f"""
+                    <section>
+                      <h2>{heading}</h2>
+                      <p>{escape(empty_message)}</p>
+                    </section>
+                    """
+                ).strip()
+
+            entries: List[str] = []
+            for idx, item in enumerate(items, start=1):
+                detail_items: List[str] = []
+                if item.source:
+                    detail_items.append(f"<li><strong>Source:</strong> {escape(item.source)}</li>")
+                if item.target:
+                    detail_items.append(f"<li><strong>Target:</strong> {escape(item.target)}</li>")
+                if item.status_code is not None:
+                    detail_items.append(f"<li><strong>Status:</strong> {escape(str(item.status_code))}</li>")
+                details_html = ""
+                if detail_items:
+                    details_html = "\n            <ul class=\"issue-details\">" + "".join(detail_items) + "</ul>"
+
+                entries.append(
+                    textwrap.dedent(
+                        f"""
+                        <li>
+                          <article class="issue-card">
+                            <header><h3>{idx}. {escape(item.kind.replace('_', ' ').title())}</h3></header>
+                            <p>{escape(item.message)}</p>{details_html}
+                          </article>
+                        </li>
+                        """
+                    ).strip()
+                )
+
+            list_class = "issue-list" if title == "Issues" else "warning-list"
+            items_html = "\n".join(entries)
+            return textwrap.dedent(
+                f"""
+                <section>
+                  <h2>{heading}</h2>
+                  <ol class="{list_class}">
+                    {items_html}
+                  </ol>
+                </section>
+                """
+            ).strip()
+
+        status_badge = "pass" if not self.has_issues else "fail"
+        status_label = "No issues detected" if status_badge == "pass" else "Issues detected"
+
+        stats_html = render_stat_cards()
+        issues_html = render_issue_list("Issues", self.issues, "No issues detected during this run. 🎉")
+        warnings_html = render_issue_list("Warnings", self.warnings, "No warnings recorded in this run.")
+
+        return textwrap.dedent(
+            f"""
+            <!DOCTYPE html>
+            <html lang="en">
+              <head>
+                <meta charset="utf-8" />
+                <meta name="viewport" content="width=device-width, initial-scale=1" />
+                <title>Website check report — {escape(self.base_url)}</title>
+                <style>
+                  :root {{
+                    color-scheme: light dark;
+                    --bg: #f8f9fb;
+                    --fg: #1f2933;
+                    --muted: #52606d;
+                    --card-bg: rgba(255, 255, 255, 0.9);
+                    --border: rgba(15, 23, 42, 0.08);
+                    --pass: #16a34a;
+                    --fail: #dc2626;
+                  }}
+                  body {{
+                    margin: 0;
+                    font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+                    background: var(--bg);
+                    color: var(--fg);
+                    line-height: 1.6;
+                  }}
+                  header.hero {{
+                    padding: 3rem 1.5rem 1rem;
+                    text-align: center;
+                  }}
+                  header.hero h1 {{
+                    margin-bottom: 0.5rem;
+                    font-size: clamp(2rem, 5vw, 3rem);
+                  }}
+                  header.hero p {{
+                    margin: 0.25rem 0;
+                    color: var(--muted);
+                  }}
+                                    .status-badge {{
+                                        display: inline-flex;
+                                        align-items: center;
+                    gap: 0.5rem;
+                    padding: 0.35rem 0.85rem;
+                    border-radius: 999px;
+                    font-weight: 600;
+                    letter-spacing: 0.04em;
+                    text-transform: uppercase;
+                    border: 1px solid var(--border);
+                  }}
+                  .status-badge.pass {{
+                    color: var(--pass);
+                    background: rgba(22, 163, 74, 0.12);
+                  }}
+                  .status-badge.fail {{
+                    color: var(--fail);
+                    background: rgba(220, 38, 38, 0.12);
+                  }}
+                  main {{
+                    padding: 0 1.5rem 4rem;
+                    margin: 0 auto;
+                    max-width: 960px;
+                  }}
+                  .grid {{
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                    gap: 1rem;
+                  }}
+                  .stat-card {{
+                    background: var(--card-bg);
+                    border: 1px solid var(--border);
+                    border-radius: 1rem;
+                    padding: 1.25rem;
+                    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+                  }}
+                  .stat-card dt {{
+                    color: var(--muted);
+                    font-size: 0.85rem;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    margin-bottom: 0.25rem;
+                  }}
+                  .stat-card dd {{
+                    margin: 0;
+                    font-size: 1.5rem;
+                    font-weight: 700;
+                  }}
+                  section {{
+                    margin: 2.5rem 0;
+                  }}
+                  ol.issue-list,
+                  ol.warning-list {{
+                    list-style: none;
+                    padding: 0;
+                    margin: 0;
+                    display: grid;
+                    gap: 1rem;
+                  }}
+                  .issue-card {{
+                    background: var(--card-bg);
+                    border: 1px solid var(--border);
+                    border-radius: 1rem;
+                    padding: 1rem 1.25rem;
+                    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+                  }}
+                  .issue-card h3 {{
+                    margin: 0 0 0.35rem;
+                  }}
+                  .issue-details {{
+                    margin: 0.85rem 0 0;
+                    padding-left: 1.25rem;
+                  }}
+                  footer {{
+                    text-align: center;
+                    padding: 2rem 1rem 3rem;
+                    color: var(--muted);
+                    font-size: 0.85rem;
+                  }}
+                  @media (max-width: 540px) {{
+                    main {{
+                      padding: 0 1rem 3rem;
+                    }}
+                  }}
+                </style>
+              </head>
+              <body>
+                <header class="hero">
+                  <p class="status-badge {status_badge}">{status_label}</p>
+                  <h1>Website check report</h1>
+                  <p><strong>Base URL:</strong> {escape(self.base_url)}</p>
+                  <p><strong>Generated:</strong> {generated_at}</p>
+                </header>
+                <main>
+                  <section>
+                    <div class="grid">
+                      {stats_html}
+                    </div>
+                  </section>
+                  <section>
+                    <h2>Summary</h2>
+                    <p>The JSON, Markdown, and text summaries for this run are available for download:</p>
+                    <ul>
+                      <li><a href="website-check-report.json">Download JSON report</a></li>
+                      <li><a href="website-check-report.md">Download Markdown report</a></li>
+                      <li><a href="website-check-summary.txt">Download summary text</a></li>
+                    </ul>
+                  </section>
+                  {issues_html}
+                  {warnings_html}
+                </main>
+                <footer>
+                  Published automatically from the website-check workflow.
+                </footer>
+              </body>
+            </html>
+            """
+        ).strip()
 
 
 class WebsiteChecker:
@@ -386,6 +636,12 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
         help="Path to write Markdown report (default: website-check-report.md)",
     )
     parser.add_argument(
+        "--html-output",
+        dest="html_output",
+        default=os.environ.get("HTML_OUTPUT", "website-check-report.html"),
+        help="Path to write HTML report (default: website-check-report.html)",
+    )
+    parser.add_argument(
         "--timeout",
         dest="timeout",
         type=int,
@@ -418,6 +674,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         json.dump(summary.to_json(), fh, indent=2)
     with open(args.markdown_output, "w", encoding="utf-8") as fh:
         fh.write(summary.to_markdown())
+    with open(args.html_output, "w", encoding="utf-8") as fh:
+        fh.write(summary.to_html())
 
     # Print concise summary to stdout for logs
     print(json.dumps(summary.to_json()))
