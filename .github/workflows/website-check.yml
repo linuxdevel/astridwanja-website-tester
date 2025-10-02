@@ -2,10 +2,8 @@ name: Build rankings and check website
 
 on:
   schedule:
-    # Run website checker at 03:00 UTC
+    # Run at 03:00 UTC
     - cron: "0 3 * * *"
-    # Run rankings at 04:00 UTC
-    - cron: '0 4 * * *'
   workflow_dispatch:
 
 permissions:
@@ -213,7 +211,8 @@ jobs:
           <body>
               <h1>Astrid Wanja - Automated Reports</h1>
               <p>Available reports:</p>
-              <a href="rankings/" class="report-link">📊 ITF Rankings</a>
+              <a href="rankings/wta.html" class="report-link">🎾 WTA Rankings</a>
+              <a href="rankings/" class="report-link">📊 Full ITF Rankings</a>
               <a href="website-check/" class="report-link">🔍 Website Check Report</a>
           </body>
           </html>
@@ -251,10 +250,12 @@ jobs:
           echo "::notice::GitHub Pages deployed successfully!"
           echo "::notice::View reports at:"
           echo "::notice::  - Main index: ${{ steps.deployment.outputs.page_url }}"
-          echo "::notice::  - Rankings: ${{ steps.deployment.outputs.page_url }}rankings/"
+          echo "::notice::  - WTA Rankings: ${{ steps.deployment.outputs.page_url }}rankings/wta.html"
+          echo "::notice::  - Full ITF Rankings: ${{ steps.deployment.outputs.page_url }}rankings/"
           echo "::notice::  - Website check: ${{ steps.deployment.outputs.page_url }}website-check/"
           echo ""
           echo "=== GitHub Pages URLs ==="
           echo "Main index: ${{ steps.deployment.outputs.page_url }}"
-          echo "Rankings: ${{ steps.deployment.outputs.page_url }}rankings/"
+          echo "WTA Rankings: ${{ steps.deployment.outputs.page_url }}rankings/wta.html"
+          echo "Full ITF Rankings: ${{ steps.deployment.outputs.page_url }}rankings/"
           echo "Website check: ${{ steps.deployment.outputs.page_url }}website-check/"

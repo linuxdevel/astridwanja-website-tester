@@ -43,6 +43,7 @@ REQUEST_PAUSE_SECONDS = 0.75
 OUTPUT_DIR = Path(__file__).resolve().parent.parent / "docs" / "rankings"
 OUTPUT_HTML = OUTPUT_DIR / "index.html"
 OUTPUT_JSON = OUTPUT_DIR / "data.json"
+OUTPUT_WTA_HTML = OUTPUT_DIR / "wta.html"
 
 
 class FetchError(RuntimeError):
@@ -394,6 +395,128 @@ def render_page(match_data: Mapping[str, MatchTypeData]) -> str:
 </html>"""
 
 
+def render_wta_page(match_data: Mapping[str, MatchTypeData]) -> str:
+    """Render a simplified WTA rankings page matching astridwanja.com style."""
+    generated = datetime.now(timezone.utc).strftime("%d %B %Y")
+    
+    # Extract WTA rankings
+    singles_wta_rank = None
+    singles_wta_date = None
+    doubles_wta_rank = None
+    doubles_wta_date = None
+    
+    singles_data = match_data.get("S")
+    if singles_data:
+        for ranking in singles_data.current_rankings:
+            if "WTA" in ranking.get("name", ""):
+                singles_wta_rank = ranking.get("rank")
+                singles_wta_date = ranking.get("date")
+                break
+    
+    doubles_data = match_data.get("D")
+    if doubles_data:
+        for ranking in doubles_data.current_rankings:
+            if "WTA" in ranking.get("name", ""):
+                doubles_wta_rank = ranking.get("rank")
+                doubles_wta_date = ranking.get("date")
+                break
+    
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{escape(PLAYER_NAME)} — WTA Rankings</title>
+  <style>
+    * {{
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }}
+    
+    body {{
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background-color: #ffffff;
+      color: #1a1a1a;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      padding: 40px 20px;
+    }}
+    
+    .rankings-grid {{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 30px;
+      max-width: 800px;
+      margin: 0 auto;
+    }}
+    
+    .ranking-card {{
+      background: #fafafa;
+      border-radius: 8px;
+      padding: 40px 30px;
+      text-align: center;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      border: 1px solid #e5e5e5;
+    }}
+    
+    .ranking-card:hover {{
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }}
+    
+    .ranking-label {{
+      font-size: 1.1rem;
+      color: #666;
+      margin-bottom: 15px;
+      font-weight: 400;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }}
+    
+    .ranking-number {{
+      font-size: 4rem;
+      font-weight: 300;
+      color: #1a1a1a;
+      margin: 10px 0;
+      line-height: 1;
+    }}
+    
+    .ranking-date {{
+      font-size: 0.9rem;
+      color: #999;
+      margin-top: 15px;
+    }}
+    
+    @media (max-width: 768px) {{
+      .ranking-number {{
+        font-size: 3rem;
+      }}
+      
+      .rankings-grid {{
+        grid-template-columns: 1fr;
+      }}
+    }}
+  </style>
+</head>
+<body>
+  <div class="rankings-grid">
+    <div class="ranking-card">
+      <div class="ranking-label">WTA Singles Ranking</div>
+      <div class="ranking-number">{singles_wta_rank if singles_wta_rank else "—"}</div>
+      <div class="ranking-date">Updated: {escape(singles_wta_date) if singles_wta_date else "N/A"}</div>
+    </div>
+    
+    <div class="ranking-card">
+      <div class="ranking-label">WTA Doubles Ranking</div>
+      <div class="ranking-number">{doubles_wta_rank if doubles_wta_rank else "—"}</div>
+      <div class="ranking-date">Updated: {escape(doubles_wta_date) if doubles_wta_date else "N/A"}</div>
+    </div>
+  </div>
+</body>
+</html>"""
+
+
 def serialize_for_json(match_data: Mapping[str, MatchTypeData]) -> Dict[str, Any]:
     payload: Dict[str, Any] = {
         "player": {
@@ -459,6 +582,10 @@ async def build_rankings() -> Mapping[str, MatchTypeData]:
 def save_outputs(match_data: Mapping[str, MatchTypeData]) -> None:
     html = render_page(match_data)
     OUTPUT_HTML.write_text(html, encoding="utf-8")
+    
+    wta_html = render_wta_page(match_data)
+    OUTPUT_WTA_HTML.write_text(wta_html, encoding="utf-8")
+    
     json_payload = serialize_for_json(match_data)
     OUTPUT_JSON.write_text(json.dumps(json_payload, indent=2), encoding="utf-8")
 
@@ -467,6 +594,7 @@ def main() -> None:
     match_data = asyncio.run(build_rankings())
     save_outputs(match_data)
     print(f"Wrote {OUTPUT_HTML.relative_to(Path.cwd())}")
+    print(f"Wrote {OUTPUT_WTA_HTML.relative_to(Path.cwd())}")
     print(f"Wrote {OUTPUT_JSON.relative_to(Path.cwd())}")
 
 

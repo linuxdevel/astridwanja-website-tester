@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Astrid Wanja Brune Olsen — WTA Rankings</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background-color: #ffffff;
+      color: #1a1a1a;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      padding: 40px 20px;
+    }
+    
+    .rankings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 30px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    .ranking-card {
+      background: #fafafa;
+      border-radius: 8px;
+      padding: 40px 30px;
+      text-align: center;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      border: 1px solid #e5e5e5;
+    }
+    
+    .ranking-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+    
+    .ranking-label {
+      font-size: 1.1rem;
+      color: #666;
+      margin-bottom: 15px;
+      font-weight: 400;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .ranking-number {
+      font-size: 4rem;
+      font-weight: 300;
+      color: #1a1a1a;
+      margin: 10px 0;
+      line-height: 1;
+    }
+    
+    .ranking-date {
+      font-size: 0.9rem;
+      color: #999;
+      margin-top: 15px;
+    }
+    
+    @media (max-width: 768px) {
+      .ranking-number {
+        font-size: 3rem;
+      }
+      
+      .rankings-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="rankings-grid">
+    <div class="ranking-card">
+      <div class="ranking-label">WTA Singles Ranking</div>
+      <div class="ranking-number">752</div>
+      <div class="ranking-date">Updated: 22 September 2025</div>
+    </div>
+    
+    <div class="ranking-card">
+      <div class="ranking-label">WTA Doubles Ranking</div>
+      <div class="ranking-number">409</div>
+      <div class="ranking-date">Updated: 22 September 2025</div>
+    </div>
+  </div>
+</body>
+</html>
