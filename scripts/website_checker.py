@@ -617,7 +617,7 @@ def build_internal_domains(
 
 def is_linkedin_domain(domain: str) -> bool:
     domain = (domain or "").lower()
-    return domain.endswith("linkedin.com")
+    return domain == "linkedin.com" or domain.endswith(".linkedin.com")
 
 
 def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
