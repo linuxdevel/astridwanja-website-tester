@@ -1,8 +1,11 @@
-name: Website checker
+name: Build rankings and check website
 
 on:
   schedule:
+    # Run website checker at 03:00 UTC
     - cron: "0 3 * * *"
+    # Run rankings at 04:00 UTC
+    - cron: '0 4 * * *'
   workflow_dispatch:
 
 permissions:
@@ -11,17 +14,15 @@ permissions:
   id-token: write
 
 concurrency:
-  group: website-check-pages
+  group: github-pages
   cancel-in-progress: false
 
 jobs:
-  check:
+  build:
     runs-on: ubuntu-latest
-    env:
-      BASE_URL: https://astridwanja.com
     outputs:
       has_issues: ${{ steps.evaluate.outputs.has_issues }}
-      report_ready: ${{ steps.mark_pages_ready.outputs.report_ready }}
+      pages_ready: ${{ steps.mark_pages_ready.outputs.pages_ready }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -29,26 +30,35 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
+          cache: 'pip'
+          cache-dependency-path: requirements.txt
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+      - name: Install Python deps and browsers
+        run: make install-browsers
+
+      - name: Install Playwright system dependencies
+        run: sudo .venv/bin/playwright install-deps chromium
+
+      - name: Generate rankings snapshot
+        id: build_rankings
+        run: .venv/bin/python ranking/build_rankings.py
 
       - name: Run website checker
         id: run_checker
+        env:
+          BASE_URL: https://astridwanja.com
         run: |
-          python scripts/website_checker.py \
+          .venv/bin/python scripts/website_checker.py \
             --json-output website-check-report.json \
             --markdown-output website-check-report.md \
             --html-output website-check-report.html
 
-      - name: Evaluate report
+      - name: Evaluate website check report
         id: evaluate
         if: steps.run_checker.outcome == 'success'
         run: |
-          python - <<'PY'
+          .venv/bin/python - <<'PY'
           import json
           import os
           from pathlib import Path
@@ -146,15 +156,71 @@ jobs:
             website-check-report.html
             website-check-summary.txt
 
-      - name: Prepare Pages artifact
+      - name: Prepare unified GitHub Pages artifact
         id: prepare_pages
-        if: steps.run_checker.outcome == 'success'
+        if: steps.build_rankings.outcome == 'success' || steps.run_checker.outcome == 'success'
         run: |
-          mkdir -p public/website-check
-          cp website-check-report.html public/website-check/index.html
-          cp website-check-report.json public/website-check/
-          cp website-check-report.md public/website-check/
-          cp website-check-summary.txt public/website-check/
+          mkdir -p public
+          
+          # Copy rankings if they exist
+          if [ -d docs/rankings ]; then
+            echo "Including rankings in deployment..."
+            cp -r docs/rankings public/
+          fi
+          
+          # Copy website check reports if they exist
+          if [ -f website-check-report.html ]; then
+            echo "Including website check reports in deployment..."
+            mkdir -p public/website-check
+            cp website-check-report.html public/website-check/index.html
+            cp website-check-report.json public/website-check/
+            cp website-check-report.md public/website-check/
+            cp website-check-summary.txt public/website-check/
+          fi
+          
+          # Create a simple index.html at root
+          cat > public/index.html <<'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Astrid Wanja - Reports</title>
+              <style>
+                  body {
+                      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                      max-width: 800px;
+                      margin: 50px auto;
+                      padding: 20px;
+                      line-height: 1.6;
+                  }
+                  h1 { color: #333; }
+                  .report-link {
+                      display: block;
+                      padding: 15px;
+                      margin: 10px 0;
+                      background: #f5f5f5;
+                      border-radius: 5px;
+                      text-decoration: none;
+                      color: #0366d6;
+                      transition: background 0.2s;
+                  }
+                  .report-link:hover {
+                      background: #e5e5e5;
+                  }
+              </style>
+          </head>
+          <body>
+              <h1>Astrid Wanja - Automated Reports</h1>
+              <p>Available reports:</p>
+              <a href="rankings/" class="report-link">📊 ITF Rankings</a>
+              <a href="website-check/" class="report-link">🔍 Website Check Report</a>
+          </body>
+          </html>
+          EOF
+          
+          echo "GitHub Pages artifact prepared with the following structure:"
+          ls -R public/
 
       - name: Upload Pages artifact
         id: upload_pages
@@ -166,11 +232,11 @@ jobs:
       - name: Mark Pages artifact ready
         id: mark_pages_ready
         if: steps.upload_pages.outcome == 'success'
-        run: echo "report_ready=true" >> "$GITHUB_OUTPUT"
+        run: echo "pages_ready=true" >> "$GITHUB_OUTPUT"
 
   deploy:
-    needs: check
-    if: ${{ needs.check.outputs.report_ready == 'true' && github.ref == 'refs/heads/master' }}
+    needs: build
+    if: ${{ needs.build.outputs.pages_ready == 'true' && github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -180,9 +246,15 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Print GitHub Pages URL
+      - name: Print GitHub Pages URLs
         run: |
           echo "::notice::GitHub Pages deployed successfully!"
-          echo "::notice::View the website check report at: ${{ steps.deployment.outputs.page_url }}website-check/"
+          echo "::notice::View reports at:"
+          echo "::notice::  - Main index: ${{ steps.deployment.outputs.page_url }}"
+          echo "::notice::  - Rankings: ${{ steps.deployment.outputs.page_url }}rankings/"
+          echo "::notice::  - Website check: ${{ steps.deployment.outputs.page_url }}website-check/"
           echo ""
-          echo "Report URL: ${{ steps.deployment.outputs.page_url }}website-check/"
+          echo "=== GitHub Pages URLs ==="
+          echo "Main index: ${{ steps.deployment.outputs.page_url }}"
+          echo "Rankings: ${{ steps.deployment.outputs.page_url }}rankings/"
+          echo "Website check: ${{ steps.deployment.outputs.page_url }}website-check/"
