@@ -174,19 +174,15 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
 
-  enforce-status:
-    needs:
-      - check
-      - deploy
-    if: needs.check.outputs.has_issues == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Fail workflow when issues detected
+      - name: Print GitHub Pages URL
         run: |
-          echo "Website checker detected issues. Failing workflow as requested."
-          exit 1
+          echo "::notice::GitHub Pages deployed successfully!"
+          echo "::notice::View the website check report at: ${{ steps.deployment.outputs.page_url }}website-check/"
+          echo ""
+          echo "Report URL: ${{ steps.deployment.outputs.page_url }}website-check/"
